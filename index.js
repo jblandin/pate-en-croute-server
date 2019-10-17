@@ -2,7 +2,7 @@ const app = require("express")();
 const server = require("http").createServer(app);
 const io = require("socket.io")(server);
 const createDebug = require("debug");
-const moment = require('moment');
+const moment = require('moment-ferie-fr');
 const config = require("./config.json");
 
 const appLog = createDebug('app');
@@ -156,13 +156,13 @@ function updateTimeleft(appTimer) {
  * @param {*} aMoment
  */
 function isMomentValide(aMoment) {
+    // TODO Vérifier plusieurs intervalles
     const debutJournee = getHeure(config.journee.debut);
     const finJournee = getHeure(config.journee.fin);
 
     return aMoment.isSameOrAfter(debutJournee)  // Début de journée
     && aMoment.isSameOrBefore(finJournee)       // Fin de journée
-    && aMoment.day() !== 6                      // Samedi
-    && aMoment.day() !== 0                      // Dimanche
+    && aMoment.isWorkingDay()
 }
 
 
@@ -185,4 +185,8 @@ function startServer() {
 }
 
 // Lancement du serveur
-startServer();
+// startServer();
+
+module.exports = {
+    start: startServer
+}

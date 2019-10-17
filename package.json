@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "DEBUG=app* node index"
+    "start": "./bin/start",
+    "start-debug": "DEBUG=app* ./bin/start"
   },
   "author": "",
   "license": "ISC",
@@ -13,6 +14,7 @@
     "debug": "^4.1.1",
     "express": "^4.17.1",
     "moment": "^2.24.0",
+    "moment-ferie-fr": "^0.2.1",
     "socket.io": "^2.3.0"
   },
   "devDependencies": {
