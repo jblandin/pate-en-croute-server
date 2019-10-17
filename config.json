@@ -1,0 +1,20 @@
+{
+    "app": {
+        "port": 3000
+    },
+    "cycle": {
+        "heures": 0,
+        "minutes": 2
+    },
+    "journee": {
+        "debut" : {
+            "heure": 0,
+            "minute": 10
+        },
+        "fin": {
+            "heure": 22,
+            "minute": 45
+        }
+
+    }
+}
