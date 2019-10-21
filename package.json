@@ -5,8 +5,9 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "./bin/start",
-    "start-debug": "DEBUG=app* ./bin/start"
+    "start": "node ./bin/start",
+    "start-debug": "set DEBUG=app* & node ./bin/start",
+    "monitored": "pm2 start bin\\start --name pate-en-croute"
   },
   "author": "",
   "license": "ISC",
