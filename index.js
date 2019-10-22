@@ -43,7 +43,7 @@ function getDureeCycleEnSecondes() {
 }
 
 /**
- *
+ * TODO : Vérifier que les intervalles sont cohérents (pas de chevauchement)
  */
 
 let interval;
@@ -172,6 +172,27 @@ function isHeureDeTravail(aMoment) {
         return aMoment.isSameOrAfter(debut)
             && aMoment.isSameOrBefore(fin)
     });
+}
+
+function calculerDateMouvement(aMoment, duree) {
+    const periodes = config.journee.slice().sort((p1, p2) => p1.debut - p2.debut);
+
+    /**
+     * TODO
+     *
+     * On regarde si `aMoment` est dans une période de tavail ou de pause
+     * Si période de travail :
+     *  On calcule le temps avant la prochaine pause (`diff`)
+     *  Si supérieur à la `durée`, on ajoute la `durée` à `aMoment` et on le retourne
+     *  Sinon, on retranche `diff` de la `duree`, et on positionne `aMoment` à la fin de la pause
+     *  Appel récursif
+     * Si pas période de travail, si jour férié
+     *  On positionne `aMoment` au jour suivant
+     *  Appel récursif
+     * Si pas période de travail, si pas jour férié
+     *  On positionne `aMoment` à la prochaine heure de travail
+     *  Appel récursif
+     */
 }
 
 
