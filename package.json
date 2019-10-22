@@ -7,7 +7,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node ./bin/start",
     "start-debug": "set DEBUG=app* & node ./bin/start",
-    "monitored": "pm2 start bin\\start --name pate-en-croute"
+    "monitored": "pm2 start bin/start --name pate-en-croute"
   },
   "author": "",
   "license": "ISC",
@@ -19,6 +19,7 @@
     "socket.io": "^2.3.0"
   },
   "devDependencies": {
+    "pm2": "^4.1.2",
     "socket.io-client": "^2.3.0"
   }
 }

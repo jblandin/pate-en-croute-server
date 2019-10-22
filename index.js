@@ -1,9 +1,9 @@
-const app = require("express")();
-const server = require("http").createServer(app);
-const io = require("socket.io")(server);
-const createDebug = require("debug");
+const app = require('express')();
+const server = require('http').createServer(app);
+const io = require('socket.io')(server);
+const createDebug = require('debug');
 const moment = require('moment-ferie-fr');
-const config = require("./config.json");
+const config = require('./config.json');
 
 const appLog = createDebug('app');
 const appError = console.error;
@@ -15,26 +15,27 @@ appLog.enabled = true;
  */
 
 const events = {
-    START: "start",
-    STOP: "stop",
-    PAUSE: "pause",
-    INIT: "init",
-    MOUVEMENT: "mouvement",
-    APP_TIMER: "app-timer"
+    START: 'start',
+    STOP: 'stop',
+    PAUSE: 'pause',
+    INIT: 'init',
+    MOUVEMENT: 'mouvement',
+    APP_TIMER: 'app-timer'
 };
 
 const states = {
-    INITIAL: "initial",
-    RUNNING: "running",
-    PAUSED: "paused",
-    STOPPED: "stopped"
+    INITIAL: 'initial',
+    RUNNING: 'running',
+    PAUSED: 'paused',
+    STOPPED: 'stopped'
 };
 
 const DUREE_CYCLE = getDureeCycleEnSecondes();
 
 const appTimer = {
     state: states.INITIAL,
-    timeleft: DUREE_CYCLE
+    timeleft: DUREE_CYCLE,
+    timeleft_next: DUREE_CYCLE * 2
 };
 
 function getDureeCycleEnSecondes() {
@@ -49,9 +50,9 @@ let interval;
 
 function initConnection(client) {
     const debug = getDebug(client);
-    debug("Connexion");
+    debug('Connexion');
 
-    client.on("disconnect", () => debug("Déconnexion"));
+    client.on('disconnect', () => debug('Déconnexion'));
 
     client.emit(events.APP_TIMER, appTimer);
 
@@ -63,22 +64,22 @@ function initConnection(client) {
 
     // Callbacks
     function onStart(data) {
-        debug("onStart", data);
+        debug('onStart', data);
         startTimer();
     }
 
     function onStop(data) {
-        debug("onStop", data);
+        debug('onStop', data);
         stopTimer();
     }
 
     function onPause(data) {
-        debug("onPause", data);
+        debug('onPause', data);
         pauseTimer();
     }
 
     function onInit(data) {
-        debug("onInit", data);
+        debug('onInit', data);
         initTimer(data);
     }
 }
@@ -100,6 +101,7 @@ function startTimer() {
             appLog('MOUVEMENT');
             // On réinitialise le temps restant
             appTimer.timeleft = DUREE_CYCLE;
+            appTimer.timeleft_next = DUREE_CYCLE * 2;
             io.emit(events.MOUVEMENT, appTimer);
         }
     }, 1000);
@@ -124,6 +126,7 @@ function stopTimer() {
     clearInterval(interval);
     appTimer.state = states.STOPPED;
     appTimer.timeleft = DUREE_CYCLE;
+    appTimer.timeleft_next = DUREE_CYCLE * 2;
     io.emit(events.APP_TIMER, appTimer);
 }
 
@@ -138,6 +141,7 @@ function initTimer(seconds) {
 
     appTimer.state = states.INITIAL;
     appTimer.timeleft = seconds;
+    appTimer.timeleft_next = seconds * 2;
     io.emit(events.APP_TIMER, appTimer);
 }
 
@@ -146,23 +150,28 @@ function updateTimeleft(appTimer) {
     const aMoment = moment();
     if (isMomentValide(aMoment)) {
         appTimer.timeleft--;
+        appTimer.timeleft_next--;
     }
 }
 
 /**
  * Retourne `true` si on est dans une période de travail :
- * - Entre le début et la fin de journée
+ * - Entre le début et la fin d'une période de travail
  * - Un jour ouvré
  * @param {*} aMoment
  */
 function isMomentValide(aMoment) {
-    // TODO Vérifier plusieurs intervalles
-    const debutJournee = getHeure(config.journee.debut);
-    const finJournee = getHeure(config.journee.fin);
+    return isHeureDeTravail(aMoment)
+        && aMoment.isWorkingDay()
+}
 
-    return aMoment.isSameOrAfter(debutJournee)  // Début de journée
-    && aMoment.isSameOrBefore(finJournee)       // Fin de journée
-    && aMoment.isWorkingDay()
+function isHeureDeTravail(aMoment) {
+    return config.journee.some((periode) => {
+        const debut = getHeure(periode.debut);
+        const fin = getHeure(periode.fin);
+        return aMoment.isSameOrAfter(debut)
+            && aMoment.isSameOrBefore(fin)
+    });
 }
 
 
@@ -181,7 +190,7 @@ function startServer() {
         appLog('Configuration : %O', config);
     });
 
-    io.on("connection", initConnection);
+    io.on('connection', initConnection);
 }
 
 // Lancement du serveur

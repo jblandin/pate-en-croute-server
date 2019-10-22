@@ -1,13 +1,13 @@
 const express = require("express");
 const app = express();
 
-const _port = 80;
+const _port = 8080;
 const _app_folder = '../pate-en-croute-client/dist/fp-affichage';
 
 
 
 // ---- SERVE STATIC FILES ---- //
-app.get('*.*', express.static(_app_folder, {maxAge: '1y'}));
+app.get('*.*', express.static(_app_folder, {maxAge: '0'}));
 
 // ---- SERVE APLICATION PATHS ---- //
 app.all('*', function (req, res) {

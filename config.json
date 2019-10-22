@@ -6,15 +6,36 @@
         "heures": 0,
         "minutes": 2
     },
-    "journee": {
-        "debut" : {
-            "heure": 0,
-            "minute": 10
+    "journee": [
+        {
+            "debut": {
+                "heure": 5,
+                "minute": 0
+            },
+            "fin": {
+                "heure": 9,
+                "minute": 45
+            }
         },
-        "fin": {
-            "heure": 22,
-            "minute": 45
+        {
+            "debut": {
+                "heure": 10,
+                "minute": 0
+            },
+            "fin": {
+                "heure": 21,
+                "minute": 0
+            }
+        },
+        {
+            "debut": {
+                "heure": 23,
+                "minute": 0
+            },
+            "fin": {
+                "heure": 23,
+                "minute": 44
+            }
         }
-
-    }
+    ]
 }
