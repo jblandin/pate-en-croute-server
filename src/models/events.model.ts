@@ -4,5 +4,5 @@ export enum Events {
   PAUSE = 'pause',
   INIT = 'init',
   MOUVEMENT = 'mouvement',
-  APP_TIMER = 'app-timer'
+  APP_TIMER = 'app-timer',
 }

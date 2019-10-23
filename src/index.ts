@@ -1,10 +1,11 @@
+import createDebug from 'debug';
 import express from 'express';
 import http from 'http';
+import moment, { Moment } from 'moment-ferie-fr';
 import socket, { Socket } from 'socket.io';
-import createDebug from 'debug';
-import * as moment from 'moment-ferie-fr';
+
 import config from '../config/config.json';
-import { Events, States, AppTimer, ConfigHeureMinute } from './models';
+import { AppTimer, ConfigHeureMinute, Events, States, ConfigIntervalle } from './models';
 
 const app = express();
 const server = http.createServer(app);
@@ -19,17 +20,19 @@ appLog.enabled = true;
  * CONSTANTES
  */
 
-
 // Fonction de récupération du moment suivant l'horaire {heure: number, minute: number}
-const getHeure = (hhmm: ConfigHeureMinute) => moment().startOf('day').hour(hhmm.heure).minute(hhmm.minute);
+const getHeure = (hhmm: ConfigHeureMinute) =>
+    moment()
+        .startOf('day')
+        .hour(hhmm.heure)
+        .minute(hhmm.minute);
 
 // Gestion du debug
 const getDebug = (client: Socket) => appLog.extend(client.id);
 
-
 const DUREE_CYCLE = getDureeCycleEnSecondes();
 
-const appTimer = {
+const appTimer: AppTimer = {
     state: States.INITIAL,
     timeleft: DUREE_CYCLE,
     timeleft_next: DUREE_CYCLE * 2
@@ -81,7 +84,6 @@ function initConnection(client: Socket) {
     }
 }
 
-
 function startTimer() {
     if (appTimer.state === States.RUNNING) {
         return;
@@ -93,7 +95,7 @@ function startTimer() {
     interval = setInterval(() => {
         updateTimeleft(appTimer);
         io.emit(Events.APP_TIMER, appTimer);
-        if (appTimer.timeleft <= 0 ){
+        if (appTimer.timeleft <= 0) {
             // Temps restant à 0 : c'est un mouvement
             appLog('MOUVEMENT');
             // On réinitialise le temps restant
@@ -115,8 +117,7 @@ function pauseTimer() {
 }
 
 function stopTimer() {
-    if (appTimer.state !== States.RUNNING
-        && appTimer.state !== States.PAUSED) {
+    if (appTimer.state !== States.RUNNING && appTimer.state !== States.PAUSED) {
         return;
     }
 
@@ -155,24 +156,38 @@ function updateTimeleft(appTmr: AppTimer) {
  * Retourne `true` si on est dans une période de travail :
  * - Entre le début et la fin d'une période de travail
  * - Un jour ouvré
- * @param {*} aMoment
  */
-function isMomentValide(aMoment: any) {
-    return isHeureDeTravail(aMoment)
-        && aMoment.isWorkingDay()
+function isMomentValide(aMoment: Moment) {
+    return isHeureDeTravail(aMoment) && aMoment.isWorkingDay();
 }
 
-function isHeureDeTravail(aMoment: any) {
-    return config.journee.some((periode) => {
+function isHeureDeTravail(aMoment: Moment) {
+    return config.journee.some(periode => {
         const debut = getHeure(periode.debut);
         const fin = getHeure(periode.fin);
-        return aMoment.isSameOrAfter(debut)
-            && aMoment.isSameOrBefore(fin);
+        return aMoment.isSameOrAfter(debut) && aMoment.isSameOrBefore(fin);
     });
 }
 
-function calculerDateMouvement(aMoment: any, duree: number) {
-    // const periodes = config.journee.slice().sort((p1, p2) => p1.debut - p2.debut);
+function getSortedPeriodes(): Array<ConfigIntervalle> {
+    return config.journee
+        .slice()
+        .sort((p1, p2) => {
+            const diffHeures = p1.debut.heure - p2.debut.heure;
+            const diffMinutes = p1.debut.minute - p2.debut.minute;
+            if (diffHeures === 0) {
+                return diffMinutes;
+            } else {
+                return diffHeures;
+            }
+        });
+}
+
+export function calculerDateMouvement(aMoment: Moment, duree: number): Moment {
+    const periodes = getSortedPeriodes();
+
+
+    return aMoment.clone().add(duree, 'second');
 
     /**
      * TODO
@@ -208,5 +223,6 @@ function startServer() {
 // startServer();
 
 module.exports = {
-    start: startServer
-}
+    start: startServer,
+    calculerDateMouvement
+};

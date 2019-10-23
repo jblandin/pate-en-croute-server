@@ -1,7 +1,7 @@
 export interface Config {
     'app': { 'port': number };
     'cycle': ConfigHeureMinute;
-    'journee': Array<ConfigIntervalle>;
+    'journee': ConfigIntervalle[];
 }
 
 export interface ConfigIntervalle {
