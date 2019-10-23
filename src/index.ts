@@ -1,9 +1,15 @@
-const app = require('express')();
-const server = require('http').createServer(app);
-const io = require('socket.io')(server);
-const createDebug = require('debug');
-const moment = require('moment-ferie-fr');
-const config = require('./config.json');
+import createDebug from 'debug';
+import express from 'express';
+import http from 'http';
+import moment, { Moment } from 'moment-ferie-fr';
+import socket, { Socket } from 'socket.io';
+
+import config from '../config/config.json';
+import { AppTimer, ConfigHeureMinute, Events, States, ConfigIntervalle } from './models';
+
+const app = express();
+const server = http.createServer(app);
+const io = socket(server);
 
 const appLog = createDebug('app');
 const appError = console.error;
@@ -14,26 +20,20 @@ appLog.enabled = true;
  * CONSTANTES
  */
 
-const events = {
-    START: 'start',
-    STOP: 'stop',
-    PAUSE: 'pause',
-    INIT: 'init',
-    MOUVEMENT: 'mouvement',
-    APP_TIMER: 'app-timer'
-};
+// Fonction de récupération du moment suivant l'horaire {heure: number, minute: number}
+const getHeure = (hhmm: ConfigHeureMinute) =>
+    moment()
+        .startOf('day')
+        .hour(hhmm.heure)
+        .minute(hhmm.minute);
 
-const states = {
-    INITIAL: 'initial',
-    RUNNING: 'running',
-    PAUSED: 'paused',
-    STOPPED: 'stopped'
-};
+// Gestion du debug
+const getDebug = (client: Socket) => appLog.extend(client.id);
 
 const DUREE_CYCLE = getDureeCycleEnSecondes();
 
-const appTimer = {
-    state: states.INITIAL,
+const appTimer: AppTimer = {
+    state: States.INITIAL,
     timeleft: DUREE_CYCLE,
     timeleft_next: DUREE_CYCLE * 2
 };
@@ -46,111 +46,109 @@ function getDureeCycleEnSecondes() {
  * TODO : Vérifier que les intervalles sont cohérents (pas de chevauchement)
  */
 
-let interval;
+let interval: NodeJS.Timeout;
 
-function initConnection(client) {
+function initConnection(client: Socket) {
     const debug = getDebug(client);
     debug('Connexion');
 
     client.on('disconnect', () => debug('Déconnexion'));
 
-    client.emit(events.APP_TIMER, appTimer);
+    client.emit(Events.APP_TIMER, appTimer);
 
     // Events
-    client.on(events.START, onStart);
-    client.on(events.STOP, onStop);
-    client.on(events.PAUSE, onPause);
-    client.on(events.INIT, onInit);
+    client.on(Events.START, onStart);
+    client.on(Events.STOP, onStop);
+    client.on(Events.PAUSE, onPause);
+    client.on(Events.INIT, onInit);
 
     // Callbacks
-    function onStart(data) {
+    function onStart(data: any) {
         debug('onStart', data);
         startTimer();
     }
 
-    function onStop(data) {
+    function onStop(data: any) {
         debug('onStop', data);
         stopTimer();
     }
 
-    function onPause(data) {
+    function onPause(data: any) {
         debug('onPause', data);
         pauseTimer();
     }
 
-    function onInit(data) {
+    function onInit(data: any) {
         debug('onInit', data);
         initTimer(data);
     }
 }
 
-
 function startTimer() {
-    if (appTimer.state === states.RUNNING) {
+    if (appTimer.state === States.RUNNING) {
         return;
     }
 
-    appTimer.state = states.RUNNING;
-    io.emit(events.APP_TIMER, appTimer);
+    appTimer.state = States.RUNNING;
+    io.emit(Events.APP_TIMER, appTimer);
     // Initialisation de l'intervalle
     interval = setInterval(() => {
         updateTimeleft(appTimer);
-        io.emit(events.APP_TIMER, appTimer);
-        if (appTimer.timeleft <= 0 ){
+        io.emit(Events.APP_TIMER, appTimer);
+        if (appTimer.timeleft <= 0) {
             // Temps restant à 0 : c'est un mouvement
             appLog('MOUVEMENT');
             // On réinitialise le temps restant
             appTimer.timeleft = DUREE_CYCLE;
             appTimer.timeleft_next = DUREE_CYCLE * 2;
-            io.emit(events.MOUVEMENT, appTimer);
+            io.emit(Events.MOUVEMENT, appTimer);
         }
     }, 1000);
 }
 
 function pauseTimer() {
-    if (appTimer.state !== states.RUNNING) {
+    if (appTimer.state !== States.RUNNING) {
         return;
     }
 
     clearInterval(interval);
-    appTimer.state = states.PAUSED;
-    io.emit(events.APP_TIMER, appTimer);
+    appTimer.state = States.PAUSED;
+    io.emit(Events.APP_TIMER, appTimer);
 }
 
 function stopTimer() {
-    if (appTimer.state !== states.RUNNING
-        && appTimer.state !== states.PAUSED) {
+    if (appTimer.state !== States.RUNNING && appTimer.state !== States.PAUSED) {
         return;
     }
 
     clearInterval(interval);
-    appTimer.state = states.STOPPED;
+    appTimer.state = States.STOPPED;
     appTimer.timeleft = DUREE_CYCLE;
     appTimer.timeleft_next = DUREE_CYCLE * 2;
-    io.emit(events.APP_TIMER, appTimer);
+    io.emit(Events.APP_TIMER, appTimer);
 }
 
-function initTimer(seconds) {
-    if (appTimer.state !== states.STOPPED) {
+function initTimer(seconds: number) {
+    if (appTimer.state !== States.STOPPED) {
         return;
     }
-    if(isNaN(seconds)) {
+    if (isNaN(seconds)) {
         appError(`${seconds} n\'est pas un nombre valide`);
         return;
     }
 
-    appTimer.state = states.INITIAL;
+    appTimer.state = States.INITIAL;
     appTimer.timeleft = seconds;
     appTimer.timeleft_next = seconds * 2;
-    io.emit(events.APP_TIMER, appTimer);
+    io.emit(Events.APP_TIMER, appTimer);
 }
 
-function updateTimeleft(appTimer) {
+function updateTimeleft(appTmr: AppTimer) {
     // on décrémente uniquement si on est dans une période valide
     const aMoment = moment();
     if (isMomentValide(aMoment)) {
-        appTimer.timeleft--;
-        appTimer.timeleft_next--;
+        appTmr.timeleft--;
+        appTmr.timeleft_next--;
     }
 }
 
@@ -158,24 +156,38 @@ function updateTimeleft(appTimer) {
  * Retourne `true` si on est dans une période de travail :
  * - Entre le début et la fin d'une période de travail
  * - Un jour ouvré
- * @param {*} aMoment
  */
-function isMomentValide(aMoment) {
-    return isHeureDeTravail(aMoment)
-        && aMoment.isWorkingDay()
+function isMomentValide(aMoment: Moment) {
+    return isHeureDeTravail(aMoment) && aMoment.isWorkingDay();
 }
 
-function isHeureDeTravail(aMoment) {
-    return config.journee.some((periode) => {
+function isHeureDeTravail(aMoment: Moment) {
+    return config.journee.some(periode => {
         const debut = getHeure(periode.debut);
         const fin = getHeure(periode.fin);
-        return aMoment.isSameOrAfter(debut)
-            && aMoment.isSameOrBefore(fin)
+        return aMoment.isSameOrAfter(debut) && aMoment.isSameOrBefore(fin);
     });
 }
 
-function calculerDateMouvement(aMoment, duree) {
-    const periodes = config.journee.slice().sort((p1, p2) => p1.debut - p2.debut);
+function getSortedPeriodes(): Array<ConfigIntervalle> {
+    return config.journee
+        .slice()
+        .sort((p1, p2) => {
+            const diffHeures = p1.debut.heure - p2.debut.heure;
+            const diffMinutes = p1.debut.minute - p2.debut.minute;
+            if (diffHeures === 0) {
+                return diffMinutes;
+            } else {
+                return diffHeures;
+            }
+        });
+}
+
+export function calculerDateMouvement(aMoment: Moment, duree: number): Moment {
+    const periodes = getSortedPeriodes();
+
+
+    return aMoment.clone().add(duree, 'second');
 
     /**
      * TODO
@@ -195,13 +207,6 @@ function calculerDateMouvement(aMoment, duree) {
      */
 }
 
-
-// Fonction de récupération du moment suivant l'horaire {heure: number, minute: number}
-const getHeure = hhmm => moment().startOf('day').hour(hhmm.heure).minute(hhmm.minute);
-
-// Gestion du debug
-const getDebug = client => appLog.extend(client.id);
-
 /**
  * SERVEUR
  */
@@ -218,5 +223,6 @@ function startServer() {
 // startServer();
 
 module.exports = {
-    start: startServer
-}
+    start: startServer,
+    calculerDateMouvement
+};
