@@ -35,7 +35,8 @@ const DUREE_CYCLE = getDureeCycleEnSecondes();
 const appTimer: AppTimer = {
     state: States.INITIAL,
     timeleft: DUREE_CYCLE,
-    timeleft_next: DUREE_CYCLE * 2
+    timeleft_next: DUREE_CYCLE * 2,
+    duration: DUREE_CYCLE
 };
 
 function getDureeCycleEnSecondes() {
