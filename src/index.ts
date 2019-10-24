@@ -170,8 +170,8 @@ function isHeureDeTravail(aMoment: Moment) {
     });
 }
 
-function getSortedPeriodes(): Array<ConfigIntervalle> {
-    return config.journee
+function getSortedPeriodes(periodes: Array<ConfigIntervalle>): Array<ConfigIntervalle> {
+    return periodes
         .slice()
         .sort((p1, p2) => {
             const diffHeures = p1.debut.heure - p2.debut.heure;
@@ -184,8 +184,12 @@ function getSortedPeriodes(): Array<ConfigIntervalle> {
         });
 }
 
-export function calculerDateMouvement(aMoment: Moment, duree: number): Moment {
-    const periodes = getSortedPeriodes();
+export function calculerDateMouvement(aMoment: Moment, duree: number, journee: ConfigIntervalle[]): Moment {
+    if (!journee || !journee.length) {
+        throw new Error('Erreur de configuration de "journee" : non défini ou vide');
+    }
+
+    const periodesDeTravail = getSortedPeriodes(journee);
 
 
     return aMoment.clone().add(duree, 'second');
