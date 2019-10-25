@@ -14,6 +14,31 @@ const journeeComplete = [{
     }
 }];
 
+const journeeAvecPauseUneHeure = [{
+    debut: {
+        heure: 0,
+        minute: 0
+    },
+    fin: {
+        heure: 16,
+        minute: 0
+    }
+},
+{
+    debut: {
+        heure: 17,
+        minute: 0
+    },
+    fin: {
+        heure: 23,
+        minute: 59
+    }
+}
+
+];
+
+
+
 describe('calculerDateMouvement', () => {
     it('Journée non renseignée', () => {
         const m = moment('24/10/2019 15:30:12', 'DD/MM/YYYY HH:mm:ss');
@@ -29,8 +54,16 @@ describe('calculerDateMouvement', () => {
     it('Ajout simple d\'une heure sur journée complète', () => {
         const m = moment('24/10/2019 15:30:12', 'DD/MM/YYYY HH:mm:ss');
         const s = 3600;
-        const rest = calculerDateMouvement(m, 3600, journeeComplete);
+        const rest = calculerDateMouvement(m, s, journeeComplete);
         expect(rest.hour()).equal(16);
+    });
+
+    it('Ajout de deux heures avec une pause d\'une heure au milieu', () => {
+        const m = moment('24/10/2019 15:30:12', 'DD/MM/YYYY HH:mm:ss');
+        const s = 2 * 3600;
+        const rest = calculerDateMouvement(m, s, journeeAvecPauseUneHeure);
+        expect(rest.hour()).equal(18);
+        expect(rest.minute()).equal(30);
     });
 
   });
