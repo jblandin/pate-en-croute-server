@@ -1,7 +1,7 @@
 import createDebug from 'debug';
 import express from 'express';
 import http from 'http';
-import moment, { Moment } from 'moment-ferie-fr';
+import moment, { Moment, Duration } from 'moment-ferie-fr';
 import socket, { Socket } from 'socket.io';
 
 import config from '../config/config.json';
@@ -16,16 +16,18 @@ const appError = console.error;
 appLog.log = console.log.bind(console);
 appLog.enabled = true;
 
+moment.locale('fr');
 /*
  * CONSTANTES
  */
 
 // Fonction de récupération du moment suivant l'horaire {heure: number, minute: number}
-const getHeure = (hhmm: ConfigHeureMinute) =>
-    moment()
+const getHeure = (hhmm: ConfigHeureMinute, aMoment: Moment) =>
+    aMoment.clone()
         .startOf('day')
         .hour(hhmm.heure)
-        .minute(hhmm.minute);
+        .minute(hhmm.minute)
+        .second(0);
 
 // Gestion du debug
 const getDebug = (client: Socket) => appLog.extend(client.id);
@@ -36,11 +38,13 @@ const appTimer: AppTimer = {
     state: States.INITIAL,
     timeleft: DUREE_CYCLE,
     timeleft_next: DUREE_CYCLE * 2,
-    duration: DUREE_CYCLE
+    duration: DUREE_CYCLE,
+    date_move: undefined,
+    date_move_next: undefined
 };
 
 function getDureeCycleEnSecondes() {
-    return (config.cycle.heures * 60 + config.cycle.minutes) * 60;
+    return (config.cycle.heures * 60 + config.cycle.minutes) * 60 + config.cycle.secondes;
 }
 
 /**
@@ -91,6 +95,9 @@ function startTimer() {
     }
 
     appTimer.state = States.RUNNING;
+    appTimer.date_move = calculerDateMouvement(moment(), appTimer.timeleft, config.journee).format('dddd DD MMMM HH:mm:ss');
+    appTimer.date_move_next = calculerDateMouvement(moment(), appTimer.timeleft_next, config.journee).format('dddd DD MMMM HH:mm:ss');
+    appLog('start timer : ', appTimer.date_move);
     io.emit(Events.APP_TIMER, appTimer);
     // Initialisation de l'intervalle
     interval = setInterval(() => {
@@ -164,8 +171,8 @@ function isMomentValide(aMoment: Moment) {
 
 function isHeureDeTravail(aMoment: Moment) {
     return config.journee.some(periode => {
-        const debut = getHeure(periode.debut);
-        const fin = getHeure(periode.fin);
+        const debut = getHeure(periode.debut, aMoment);
+        const fin = getHeure(periode.fin, aMoment);
         return aMoment.isSameOrAfter(debut) && aMoment.isSameOrBefore(fin);
     });
 }
@@ -184,32 +191,76 @@ function getSortedPeriodes(periodes: Array<ConfigIntervalle>): Array<ConfigInter
         });
 }
 
+export function getPeriodeDeTravail(m: Moment, periodesDeTravail: ConfigIntervalle[]): ConfigIntervalle {
+    const inters = periodesDeTravail.filter((intervalle) => {
+        const debut = getHeure(intervalle.debut, m);
+        const fin = getHeure(intervalle.fin, m);
+        return m.isSameOrAfter(debut) && m.isBefore(fin);
+    });
+    if (inters.length === 1) {
+        return inters[0];
+    } else {
+        return undefined;
+    }
+}
+
+export function getDureeAvantReprise(m: Moment, periodesDeTravail: ConfigIntervalle[]): Duration {
+    let duration: Duration;
+    periodesDeTravail.forEach(intervalle => {
+        if (!duration) {
+            const debut = getHeure(intervalle.debut, m);
+            if (m.isBefore(debut)) {
+                duration = moment.duration(debut.diff(m));
+            }
+
+        }
+    });
+
+    if (!duration) {
+        // Il n'y a plus de période de travail sur cette journée
+        // On positionne le moment sur la journée suivante au debut
+        // du premier intervalle
+        const newM = getHeure(periodesDeTravail[0].debut, m.clone().add(1, 'd'));
+        duration = moment.duration(newM.diff(m));
+    }
+
+    return duration;
+}
+
 export function calculerDateMouvement(aMoment: Moment, duree: number, journee: ConfigIntervalle[]): Moment {
     if (!journee || !journee.length) {
         throw new Error('Erreur de configuration de "journee" : non défini ou vide');
     }
+    const m = aMoment.clone();
+    // console.log('moment : ', m, 'durée : ', moment.duration(duree, 's').humanize());
+    if (!m.isWorkingDay()) {
+        m.add(1, 'd').startOf('day');
+        return calculerDateMouvement(m, duree, journee);
+    }
 
     const periodesDeTravail = getSortedPeriodes(journee);
+    const intervalle = getPeriodeDeTravail(m, periodesDeTravail);
 
-
-    return aMoment.clone().add(duree, 'second');
-
-    /**
-     * TODO
-     *
-     * On regarde si `aMoment` est dans une période de tavail ou de pause
-     * Si période de travail :
-     *  On calcule le temps avant la prochaine pause (`diff`)
-     *  Si supérieur à la `durée`, on ajoute la `durée` à `aMoment` et on le retourne
-     *  Sinon, on retranche `diff` de la `duree`, et on positionne `aMoment` à la fin de la pause
-     *  Appel récursif
-     * Si pas période de travail, si jour férié
-     *  On positionne `aMoment` au jour suivant
-     *  Appel récursif
-     * Si pas période de travail, si pas jour férié
-     *  On positionne `aMoment` à la prochaine heure de travail
-     *  Appel récursif
-     */
+    if (intervalle) {
+        const dureeAvantPause = moment.duration(getHeure(intervalle.fin, m).diff(m));
+        if (dureeAvantPause.asSeconds() > duree) {
+            // Prochain mouvement avant la prochaine pause
+            return m.add(duree, 's');
+        } else {
+            // On ajoute le temps restant avant la pause,
+            // et on diminue le temps restant d'autant
+            m.add(dureeAvantPause);
+            const dureeRestante = duree - dureeAvantPause.asSeconds();
+            return calculerDateMouvement(m, dureeRestante, journee);
+        }
+    } else {
+        // On calcule la durée restante de la pause
+        const dureeAvantReprise = getDureeAvantReprise(m, periodesDeTravail);
+        // Et on se positionne à la fin de la pause
+        m.add(dureeAvantReprise);
+        // console.log('fin de pause : ', m);
+        return calculerDateMouvement(m, duree, journee);
+    }
 }
 
 /**
@@ -229,5 +280,7 @@ function startServer() {
 
 module.exports = {
     start: startServer,
-    calculerDateMouvement
+    calculerDateMouvement,
+    getPeriodeDeTravail,
+    getDureeAvantReprise
 };

@@ -3,8 +3,9 @@
         "port": 3000
     },
     "cycle": {
-        "heures": 15,
-        "minutes": 15
+        "heures": 19,
+        "minutes": 22,
+        "secondes": 30
     },
     "journee": [
         {
@@ -20,21 +21,11 @@
         {
             "debut": {
                 "heure": 10,
-                "minute": 0
+                "minute": 15
             },
             "fin": {
                 "heure": 21,
                 "minute": 0
-            }
-        },
-        {
-            "debut": {
-                "heure": 22,
-                "minute": 0
-            },
-            "fin": {
-                "heure": 23,
-                "minute": 44
             }
         }
     ]
