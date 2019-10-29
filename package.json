@@ -10,9 +10,10 @@
     "prestart-client": "npm run build",
     "test": "mocha -r ts-node/register src/**/*.test.ts --watch-extensions ts --watch",
     "start": "node ./bin/start",
-    "start-client": "node ./bin/start_client",
+    "start-client": "node ./bin/start-client",
     "start-debug": "set DEBUG=app* & node ./bin/start",
-    "monitored": "pm2 start bin/start --name pate-en-croute"
+    "monitored-server": "pm2 start bin/start --name fp-affichage-serveur --log . --time",
+    "monitored-client": "pm2 start bin/start-client --name fp-affichage-client --log . --time"
   },
   "author": "",
   "license": "ISC",
@@ -21,6 +22,7 @@
     "express": "^4.17.1",
     "moment": "^2.24.0",
     "moment-ferie-fr": "^0.2.1",
+    "pm2": "^4.1.2",
     "socket.io": "^2.3.0"
   },
   "devDependencies": {

@@ -17,9 +17,7 @@ appLog.log = console.log.bind(console);
 appLog.enabled = true;
 
 moment.locale('fr');
-/*
- * CONSTANTES
- */
+
 
 // Fonction de récupération du moment suivant l'horaire {heure: number, minute: number}
 const getHeure = (hhmm: ConfigHeureMinute, aMoment: Moment) =>
@@ -95,8 +93,10 @@ function startTimer() {
     }
 
     appTimer.state = States.RUNNING;
-    appTimer.date_move = calculerDateMouvement(moment(), appTimer.timeleft, config.journee).format('dddd DD MMMM HH:mm:ss');
-    appTimer.date_move_next = calculerDateMouvement(moment(), appTimer.timeleft_next, config.journee).format('dddd DD MMMM HH:mm:ss');
+    appTimer.date_move = calculerDateMouvement(moment(), appTimer.timeleft, config.journee)
+        .format('dddd DD MMMM HH:mm:ss');
+    appTimer.date_move_next = calculerDateMouvement(moment(), appTimer.timeleft_next, config.journee)
+        .format('dddd DD MMMM HH:mm:ss');
     appLog('start timer : ', appTimer.date_move);
     io.emit(Events.APP_TIMER, appTimer);
     // Initialisation de l'intervalle
@@ -109,6 +109,10 @@ function startTimer() {
             // On réinitialise le temps restant
             appTimer.timeleft = DUREE_CYCLE;
             appTimer.timeleft_next = DUREE_CYCLE * 2;
+            appTimer.date_move = calculerDateMouvement(moment(), appTimer.timeleft, config.journee)
+                .format('dddd DD MMMM HH:mm:ss');
+            appTimer.date_move_next = calculerDateMouvement(moment(), appTimer.timeleft_next, config.journee)
+                .format('dddd DD MMMM HH:mm:ss');
             io.emit(Events.MOUVEMENT, appTimer);
         }
     }, 1000);

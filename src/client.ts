@@ -1,18 +1,15 @@
 import express from 'express';
-
-const app = express();
-
-const port = 8080;
-const appFolder = '../pate-en-croute-client/dist/fp-affichage';
-
+import config from '../config/config-client.json';
 
 function startServer() {
+    const app = express();
+
     // ---- SERVE STATIC FILES ---- //
-    app.get('*.*', express.static(appFolder, {maxAge: '0'}));
+    app.get('*.*', express.static(config.app_folder, {maxAge: '1d'}));
 
     // ---- SERVE APLICATION PATHS ---- //
     app.all('*', (req, res) => {
-        res.status(200).sendFile(`/`, {root: appFolder});
+        res.status(200).sendFile(`/`, {root: config.app_folder});
     });
 
     // ---- ENABLE CORS FOR ALL ORIGINS ---- //
@@ -23,8 +20,8 @@ function startServer() {
     });
 
     // ---- START UP THE NODE SERVER  ----
-    app.listen(port, () => {
-        console.log('Node Express server for ' + app.name + ' listening on http://localhost:' + port);
+    app.listen(config.port, () => {
+        console.log('Node Express server for ' + app.name + ' listening on port: ' + config.port);
     });
 }
 
