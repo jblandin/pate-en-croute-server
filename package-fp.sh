@@ -10,6 +10,7 @@ mkdir -p $target/fp
 cp -r $source/bin $target/fp
 cp -r $source/dist $target/fp
 cp $source/ecosystem.config.js $target/fp
-cp $source/package* $target/fp
+cp $source/package.json $target/fp
+cp $source/package-lock.json $target/fp
 
 tar czf $target/fp-prod.tar.gz --directory $target fp
