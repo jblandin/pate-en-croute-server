@@ -141,7 +141,8 @@ function stopTimer() {
 }
 
 function initTimer(seconds: number) {
-    if (appTimer.state !== States.STOPPED) {
+    if (appTimer.state !== States.STOPPED
+        && appTimer.state !== States.INITIAL) {
         return;
     }
     if (isNaN(seconds)) {
@@ -151,7 +152,11 @@ function initTimer(seconds: number) {
 
     appTimer.state = States.INITIAL;
     appTimer.timeleft = seconds;
-    appTimer.timeleft_next = seconds * 2;
+    appTimer.timeleft_next = DUREE_CYCLE + seconds;
+    appTimer.date_move = calculerDateMouvement(moment(), appTimer.timeleft, config.journee)
+        .format('dddd DD MMMM HH:mm:ss');
+    appTimer.date_move_next = calculerDateMouvement(moment(), appTimer.timeleft_next, config.journee)
+        .format('dddd DD MMMM HH:mm:ss');
     io.emit(Events.APP_TIMER, appTimer);
 }
 
