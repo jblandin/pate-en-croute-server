@@ -12,8 +12,8 @@
     "start": "node ./bin/start",
     "start-client": "node ./bin/start-client",
     "start-debug": "set DEBUG=app* & node ./bin/start",
-    "monitored-server": "pm2 start bin/start --name fp-affichage-serveur --log . --time",
-    "monitored-client": "pm2 start bin/start-client --name fp-affichage-client --log . --time"
+    "monitored": "pm2 start ecosystem.config.js",
+    "monitored-dev": "pm2 start ecosystem.dev.config.js"
   },
   "author": "",
   "license": "ISC",
