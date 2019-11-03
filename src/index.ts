@@ -38,7 +38,8 @@ const appTimer: AppTimer = {
     timeleft_next: DUREE_CYCLE * 2,
     duration: DUREE_CYCLE,
     date_move: undefined,
-    date_move_next: undefined
+    date_move_next: undefined,
+    isPauseAutomatique: false
 };
 
 function getDureeCycleEnSecondes() {
@@ -101,7 +102,7 @@ function startTimer() {
     io.emit(Events.APP_TIMER, appTimer);
     // Initialisation de l'intervalle
     interval = setInterval(() => {
-        updateTimeleft(appTimer);
+        updateTimeleft(appTimer, moment());
         io.emit(Events.APP_TIMER, appTimer);
         if (appTimer.timeleft <= 0) {
             // Temps restant à 0 : c'est un mouvement
@@ -160,12 +161,14 @@ function initTimer(seconds: number) {
     io.emit(Events.APP_TIMER, appTimer);
 }
 
-function updateTimeleft(appTmr: AppTimer) {
+function updateTimeleft(appTmr: AppTimer, aMoment: Moment) {
     // on décrémente uniquement si on est dans une période valide
-    const aMoment = moment();
     if (isMomentValide(aMoment)) {
+        appTmr.isPauseAutomatique = false;
         appTmr.timeleft--;
         appTmr.timeleft_next--;
+    } else {
+        appTmr.isPauseAutomatique = true;
     }
 }
 

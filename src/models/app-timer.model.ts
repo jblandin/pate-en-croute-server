@@ -6,4 +6,5 @@ export interface AppTimer {
   duration: number;
   date_move?: string;
   date_move_next?: string;
+  isPauseAutomatique: boolean;
 }
