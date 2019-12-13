@@ -38,7 +38,9 @@ const appTimer: AppTimer = {
     timeleft_next: DUREE_CYCLE * 2,
     duration: DUREE_CYCLE,
     date_move: undefined,
+    date_move_iso: undefined,
     date_move_next: undefined,
+    date_move_next_iso: undefined,
     isPauseAutomatique: false
 };
 
@@ -94,10 +96,15 @@ function startTimer() {
     }
 
     appTimer.state = States.RUNNING;
-    appTimer.date_move = calculerDateMouvement(moment(), appTimer.timeleft, config.journee)
-        .format('dddd DD MMMM HH:mm:ss');
-    appTimer.date_move_next = calculerDateMouvement(moment(), appTimer.timeleft_next, config.journee)
-        .format('dddd DD MMMM HH:mm:ss');
+
+    let m = calculerDateMouvement(moment(), appTimer.timeleft, config.journee);
+    appTimer.date_move_iso = m.format();
+    appTimer.date_move = m.format('dddd DD MMMM HH:mm:ss');
+
+    m = calculerDateMouvement(moment(), appTimer.timeleft_next, config.journee);
+    appTimer.date_move_next_iso = m.format();
+    appTimer.date_move_next = m.format('dddd DD MMMM HH:mm:ss');
+
     appLog('start timer : ', appTimer.date_move);
     io.emit(Events.APP_TIMER, appTimer);
     // Initialisation de l'intervalle
@@ -110,10 +117,15 @@ function startTimer() {
             // On réinitialise le temps restant
             appTimer.timeleft = DUREE_CYCLE;
             appTimer.timeleft_next = DUREE_CYCLE * 2;
-            appTimer.date_move = calculerDateMouvement(moment(), appTimer.timeleft, config.journee)
-                .format('dddd DD MMMM HH:mm:ss');
-            appTimer.date_move_next = calculerDateMouvement(moment(), appTimer.timeleft_next, config.journee)
-                .format('dddd DD MMMM HH:mm:ss');
+
+            m = calculerDateMouvement(moment(), appTimer.timeleft, config.journee);
+            appTimer.date_move_iso = m.format();
+            appTimer.date_move = m.format('dddd DD MMMM HH:mm:ss');
+
+            m = calculerDateMouvement(moment(), appTimer.timeleft_next, config.journee);
+            appTimer.date_move_next_iso = m.format();
+            appTimer.date_move_next = m.format('dddd DD MMMM HH:mm:ss');
+
             io.emit(Events.MOUVEMENT, appTimer);
         }
     }, 1000);
@@ -154,10 +166,15 @@ function initTimer(seconds: number) {
     appTimer.state = States.INITIAL;
     appTimer.timeleft = seconds;
     appTimer.timeleft_next = DUREE_CYCLE + seconds;
-    appTimer.date_move = calculerDateMouvement(moment(), appTimer.timeleft, config.journee)
-        .format('dddd DD MMMM HH:mm:ss');
-    appTimer.date_move_next = calculerDateMouvement(moment(), appTimer.timeleft_next, config.journee)
-        .format('dddd DD MMMM HH:mm:ss');
+
+    let m = calculerDateMouvement(moment(), appTimer.timeleft, config.journee);
+    appTimer.date_move_iso = m.format();
+    appTimer.date_move = m.format('dddd DD MMMM HH:mm:ss');
+
+    m = calculerDateMouvement(moment(), appTimer.timeleft_next, config.journee);
+    appTimer.date_move_next_iso = m.format();
+    appTimer.date_move_next = m.format('dddd DD MMMM HH:mm:ss');
+
     io.emit(Events.APP_TIMER, appTimer);
 }
 
@@ -167,6 +184,15 @@ function updateTimeleft(appTmr: AppTimer, aMoment: Moment) {
         appTmr.isPauseAutomatique = false;
         appTmr.timeleft--;
         appTmr.timeleft_next--;
+        if (appTmr.timeleft % 60 === 0) {
+            const mMove = moment(appTimer.date_move_iso);
+            const tl = calculerTempsRestantAvantDateDonnee(aMoment, mMove, config.journee);
+            appTmr.timeleft = Math.round(tl);
+
+            const mMoveNext = moment(appTimer.date_move_next_iso);
+            const tln = calculerTempsRestantAvantDateDonnee(aMoment, mMoveNext, config.journee);
+            appTmr.timeleft_next = Math.round(tln);
+        }
     } else {
         appTmr.isPauseAutomatique = true;
     }
@@ -275,6 +301,38 @@ export function calculerDateMouvement(aMoment: Moment, duree: number, journee: C
     }
 }
 
+export function calculerTempsRestantAvantDateDonnee(nowMoment: Moment, cibleMoment: Moment, journee: ConfigIntervalle[]): number {
+    if (!journee || !journee.length) {
+        throw new Error('Erreur de configuration de "journee" : non défini ou vide');
+    }
+
+    const m = nowMoment.clone();
+    if (!m.isWorkingDay()) {
+        m.add(1, 'd').startOf('day');
+        return calculerTempsRestantAvantDateDonnee(m, cibleMoment, journee);
+    }
+    const periodesDeTravail = getSortedPeriodes(journee);
+    const intervalle = getPeriodeDeTravail(m, periodesDeTravail);
+
+    if (intervalle) {
+        const dureeTotale = cibleMoment.diff(m, 'seconds');
+        const dureeAvantPause = moment.duration(getHeure(intervalle.fin, m).diff(m));
+        if (dureeAvantPause.asSeconds() > dureeTotale) {
+            return dureeTotale;
+        } else {
+            m.add(dureeAvantPause);
+            appLog('dureeAvantPause.asSeconds()', dureeAvantPause.asSeconds());
+            return dureeAvantPause.asSeconds() + calculerTempsRestantAvantDateDonnee(m, cibleMoment, journee);
+        }
+    } else {
+        // On calcule la durée restante de la pause
+        const dureeAvantReprise = getDureeAvantReprise(m, periodesDeTravail);
+        // Et on se positionne à la fin de la pause
+        m.add(dureeAvantReprise);
+        return calculerTempsRestantAvantDateDonnee(m, cibleMoment, journee);
+    }
+}
+
 /**
  * SERVEUR
  */
@@ -294,5 +352,6 @@ module.exports = {
     start: startServer,
     calculerDateMouvement,
     getPeriodeDeTravail,
-    getDureeAvantReprise
+    getDureeAvantReprise,
+    calculerTempsRestantAvantDateDonnee
 };
