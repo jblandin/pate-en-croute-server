@@ -1,1 +1,1 @@
-export { calculerDateMouvement, calculerTempsRestantAvantDateDonnee, getDureeCycleEnSecondes, isMomentValide } from './calcul-date.service'
+export { calculerDateMouvement, calculerTempsRestantAvantDateDonnee, getDureeCycleEnSecondes, isMomentValide } from './calcul-date.service';

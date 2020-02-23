@@ -1,6 +1,6 @@
 import moment, { Moment } from 'moment-ferie-fr';
-import { AppTimer, States, Config, AppTimerCallbackFn } from "../models";
-import { getDureeCycleEnSecondes, calculerDateMouvement, isMomentValide, calculerTempsRestantAvantDateDonnee } from "../calcul-date";
+import { AppTimer, States, Config, AppTimerCallbackFn } from '../models';
+import { getDureeCycleEnSecondes, calculerDateMouvement, isMomentValide, calculerTempsRestantAvantDateDonnee } from '../calcul-date';
 
 const appError = console.error;
 
@@ -36,23 +36,19 @@ export class Timer {
     getTimer(): AppTimer {
         return this.appTimer;
     }
-    
+
     /**
      * Retourne le temps restant entre un moment et une date
-     * @param aMoment 
-     * @param date 
      */
     private _calculerTempsRestant(aMoment: Moment, date: string): number {
         const mMove = moment(date);
         const tl = calculerTempsRestantAvantDateDonnee(aMoment, mMove, this.config.journee);
         return Math.round(tl);
     }
-    
+
     /**
      * Recalcule les temps restants du moment suivant et de celui d'après,
      * afin d'éviter d'avoir un décalage dû à l'imprecision de `setInterval`
-     * @param at 
-     * @param m 
      */
     private _recalibrerTempsRestant(at: AppTimer, m: Moment) {
         if (at.timeleft % CALIBRAGE_FREQ === 0) {
@@ -63,8 +59,6 @@ export class Timer {
 
     /**
      * Mise à jour du appTimer, en fonction du moment donné
-     * @param at 
-     * @param aMoment 
      */
     private _updateTimeleft(at: AppTimer, aMoment: Moment) {
         // on décrémente uniquement si on est dans une période valide
@@ -83,14 +77,13 @@ export class Timer {
     /**
      * Mise à jour de la date du prochain mouvement et le suivant,
      * en fonction du temps restant
-     * @param at 
      */
     private _updateDateMouvement(at: AppTimer) {
-        let m = calculerDateMouvement(moment(), at.timeleft, this.config.journee);
+        const m = calculerDateMouvement(moment(), at.timeleft, this.config.journee);
         at.date_move_iso = m.format();
         at.date_move = m.format('dddd DD MMMM HH:mm:ss');
-    
-        let mNxt = calculerDateMouvement(moment(), at.timeleft_next, this.config.journee);
+
+        const mNxt = calculerDateMouvement(moment(), at.timeleft_next, this.config.journee);
         at.date_move_next_iso = mNxt.format();
         at.date_move_next = mNxt.format('dddd DD MMMM HH:mm:ss');
     }
@@ -98,8 +91,6 @@ export class Timer {
     /**
      * Initialise les temps restant des deux prochains mouvement,
      * la durée avant le premier peut être donnée
-     * @param at 
-     * @param dureeRestante 
      */
     private _initTimeLeft(at: AppTimer, dureeRestante?: number) {
         at.timeleft = dureeRestante || this.dureeCycle;
@@ -108,20 +99,18 @@ export class Timer {
 
     /**
      * Démarre le timer
-     * @param cb 
-     * @param cbMouvement 
      */
     startTimer(cb: AppTimerCallbackFn, cbMouvement: AppTimerCallbackFn) {
         if (this.appTimer.state === States.RUNNING) {
             return;
         }
-    
+
         this.appTimer.state = States.RUNNING;
-    
+
         this._updateDateMouvement(this.appTimer);
-    
+
         cb(this.appTimer);
-        
+
         // Initialisation de l'intervalle
         this.intervalle = setInterval(() => {
             this._updateTimeleft(this.appTimer, moment());
@@ -129,48 +118,44 @@ export class Timer {
             if (this.appTimer.timeleft <= 0) {
                 // Temps restant à 0 : c'est un mouvement
                 // On réinitialise le temps restant
-                this._initTimeLeft(this.appTimer);    
+                this._initTimeLeft(this.appTimer);
                 this._updateDateMouvement(this.appTimer);
-    
+
                 cbMouvement(this.appTimer);
             }
         }, 1000);
     }
-    
+
     /**
      * Met le timer en pause
-     * @param cb 
      */
     pauseTimer(cb: AppTimerCallbackFn) {
         if (this.appTimer.state !== States.RUNNING) {
             return;
         }
-    
+
         clearInterval(this.intervalle);
         this.appTimer.state = States.PAUSED;
         cb(this.appTimer);
     }
-    
+
 
     /**
      * Arrête le timer
-     * @param cb 
      */
     stopTimer(cb: AppTimerCallbackFn) {
         if (this.appTimer.state !== States.RUNNING && this.appTimer.state !== States.PAUSED) {
             return;
         }
-    
+
         clearInterval(this.intervalle);
         this.appTimer.state = States.STOPPED;
         this._initTimeLeft(this.appTimer);
         cb(this.appTimer);
     }
-    
+
     /**
      * Initialise le timer à un temps restant donné
-     * @param seconds 
-     * @param cb 
      */
     initTimer(seconds: number, cb: AppTimerCallbackFn) {
         if (this.appTimer.state !== States.STOPPED
@@ -181,11 +166,11 @@ export class Timer {
             appError(`${seconds} n\'est pas un nombre valide`);
             return;
         }
-    
+
         this.appTimer.state = States.INITIAL;
-        this._initTimeLeft(this.appTimer, seconds);    
+        this._initTimeLeft(this.appTimer, seconds);
         this._updateDateMouvement(this.appTimer);
-    
+
         cb(this.appTimer);
     }
 }

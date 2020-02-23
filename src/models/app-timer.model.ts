@@ -11,6 +11,4 @@ export interface AppTimer {
   isPauseAutomatique: boolean;
 }
 
-export interface AppTimerCallbackFn {
-  (at: AppTimer): void;
-}
+export type AppTimerCallbackFn = (at: AppTimer) => void;

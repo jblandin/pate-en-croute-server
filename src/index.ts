@@ -1,3 +1,10 @@
+/**
+ * 
+ */
+
+// Utile pour les logs de la config
+process.env.DEBUG_DEPTH = '10';
+
 import createDebug from 'debug';
 import express from 'express';
 import http from 'http';
@@ -49,7 +56,7 @@ function initConnection(client: Socket) {
     client.on(Events.PAUSE, onPause);
     client.on(Events.INIT, onInit);
 
-    // Callbacks envoyés au client    
+    // Callbacks envoyés au client
     function onStart(data: any) {
         debug('onStart', data);
         timer.startTimer(emmitAppTimerEvt, emmitMouvementEvt);

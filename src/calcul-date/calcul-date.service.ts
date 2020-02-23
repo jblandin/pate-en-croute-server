@@ -7,8 +7,6 @@ import moment, { Moment, Duration } from 'moment-ferie-fr';
 
 /**
  * Retourne un nouveau moment pour l'horaire donné
- * @param hhmm 
- * @param aMoment
  */
 export function getMomentPourHeureMinute(hhmm: ConfigHeureMinute, aMoment: Moment): Moment {
     return aMoment.clone()
@@ -20,7 +18,6 @@ export function getMomentPourHeureMinute(hhmm: ConfigHeureMinute, aMoment: Momen
 
 /**
  * Retourne la durée d'un cycle en secondes
- * @param cycle 
  */
 export function getDureeCycleEnSecondes(cycle: ConfigCycle): number {
     return (cycle.heures * 60 + cycle.minutes) * 60 + cycle.secondes;
@@ -28,8 +25,6 @@ export function getDureeCycleEnSecondes(cycle: ConfigCycle): number {
 
 /**
  * Compare deux périodes en fonction de l'heure de début
- * @param p1 
- * @param p2 
  */
 function _comparePeriodes(p1: ConfigIntervalle, p2: ConfigIntervalle): number {
     const diffHeures = p1.debut.heure - p2.debut.heure;
@@ -43,7 +38,6 @@ function _comparePeriodes(p1: ConfigIntervalle, p2: ConfigIntervalle): number {
 
 /**
  * Trie une liste de périodes en fonction de l'heure de début
- * @param periodes 
  */
 export function getPeriodesTriees(periodes: Array<ConfigIntervalle>): Array<ConfigIntervalle> {
     return periodes
@@ -52,21 +46,18 @@ export function getPeriodesTriees(periodes: Array<ConfigIntervalle>): Array<Conf
 }
 
 /**
- * Retourne une fonction pour un moment donné, 
- * qui retourne `true` si le moment est dans un intervalle donné 
- * @param m 
+ * Retourne une fonction pour un moment donné,
+ * qui retourne `true` si le moment est dans un intervalle donné
  */
 function _isMomentDansIntervalleFn(m: Moment) {
     return (intervalle: ConfigIntervalle) => {
         const debut = getMomentPourHeureMinute(intervalle.debut, m);
         const fin = getMomentPourHeureMinute(intervalle.fin, m);
         return m.isSameOrAfter(debut) && m.isBefore(fin);
-    }
+    };
 }
 /**
  * Retourne l'intervalle dans lequel se trouve le moment, `undefined` si aucun intervalle trouvé
- * @param m 
- * @param periodesDeTravail 
  */
 export function findPeriodeDeTravail(m: Moment, periodesDeTravail: ConfigIntervalle[]): ConfigIntervalle {
     const inters = periodesDeTravail.filter(_isMomentDansIntervalleFn(m));
@@ -78,22 +69,18 @@ export function findPeriodeDeTravail(m: Moment, periodesDeTravail: ConfigInterva
 }
 
 /**
- * Retourne pour un moment donné la durée avant le prochain intervalle, 
+ * Retourne pour un moment donné la durée avant le prochain intervalle,
  * ou `undefined` s'il n'y a pas d'intervalle après le moment
- * @param m 
- * @param periodesDeTravail 
  */
 function _getDureeAvantReprise(m: Moment, periodesDeTravail: ConfigIntervalle[]): Duration {
     const debutIntervalle = periodesDeTravail
         .map(i => getMomentPourHeureMinute(i.debut, m))
-        .find(debut => m.isBefore(debut))
+        .find(debut => m.isBefore(debut));
     return debutIntervalle && moment.duration(debutIntervalle.diff(m));
 }
 
 /**
  * Retourne pour un moment donné la durée avant le premier intervalle le jour suivant
- * @param m 
- * @param periodesDeTravail 
  */
 function _getDureeAvantRepriseLeJourSuivant(m: Moment, periodesDeTravail: ConfigIntervalle[]): Duration {
     const jourSuivant = m.clone().add(1, 'd');
@@ -102,9 +89,7 @@ function _getDureeAvantRepriseLeJourSuivant(m: Moment, periodesDeTravail: Config
 }
 
 /**
- * Retourne la durée avant la prochaine reprise 
- * @param m 
- * @param periodesDeTravail 
+ * Retourne la durée avant la prochaine reprise
  */
 export function getDureeAvantReprise(m: Moment, periodesDeTravail: ConfigIntervalle[]): Duration {
     return _getDureeAvantReprise(m, periodesDeTravail)
@@ -122,7 +107,6 @@ export function isMomentValide(aMoment: Moment, journee: ConfigIntervalle[]): bo
 
 /**
  * Retourne `true` si le moment donné se trouve dans un intervalle de travail
- * @param aMoment 
  */
 export function isHeureDeTravail(aMoment: Moment, journee: ConfigIntervalle[]): boolean {
     return journee.some(periode => {
@@ -133,10 +117,7 @@ export function isHeureDeTravail(aMoment: Moment, journee: ConfigIntervalle[]): 
 }
 
 /**
- * Calcule la date du prochain mouvement
- * @param aMoment Un moment
- * @param duree La durée restante
- * @param journee 
+ * Calcule la date du prochain mouvement en fonction du moment et de la durée restante
  */
 export function calculerDateMouvement(aMoment: Moment, duree: number, journee: ConfigIntervalle[]): Moment {
     if (!journee || !journee.length) {
@@ -175,6 +156,9 @@ export function calculerDateMouvement(aMoment: Moment, duree: number, journee: C
     }
 }
 
+/**
+ * Calcule le temps restant entre un moment donné et un moment cible
+ */
 export function calculerTempsRestantAvantDateDonnee(nowMoment: Moment, cibleMoment: Moment, journee: ConfigIntervalle[]): number {
     if (!journee || !journee.length) {
         throw new Error('Erreur de configuration de "journee" : non défini ou vide');

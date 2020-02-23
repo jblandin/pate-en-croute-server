@@ -1,1 +1,1 @@
-export { Timer } from './timer.service'
+export { Timer } from './timer.service';
