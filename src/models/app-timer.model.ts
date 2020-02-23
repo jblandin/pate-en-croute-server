@@ -10,3 +10,7 @@ export interface AppTimer {
   date_move_next_iso?: string;
   isPauseAutomatique: boolean;
 }
+
+export interface AppTimerCallbackFn {
+  (at: AppTimer): void;
+}
