@@ -3,40 +3,21 @@
         "port": 3000
     },
     "cycle": {
-        "heures": 19,
-        "minutes": 22,
-        "secondes": 30
+        "heures": 2,
+        "minutes": 0,
+        "secondes": 0
     },
     "journee": [
         {
             "debut": {
-                "heure": 5,
-                "minute": 15
-            },
-            "fin": {
-                "heure": 9,
-                "minute": 30
-            }
-        },
-        {
-            "debut": {
-                "heure": 10,
+                "heure": 0,
                 "minute": 0
             },
             "fin": {
-                "heure": 17,
-                "minute": 0
-            }
-        },
-        {
-            "debut": {
-                "heure": 17,
-                "minute": 30
-            },
-            "fin": {
-                "heure": 21,
-                "minute": 45
+                "heure": 23,
+                "minute": 59
             }
         }
-    ]
+    ],
+    "allDaysValides": true
 }

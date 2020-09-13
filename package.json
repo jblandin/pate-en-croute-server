@@ -22,7 +22,6 @@
     "express": "^4.17.1",
     "moment": "^2.24.0",
     "moment-ferie-fr": "^0.2.1",
-    "pm2": "^4.1.2",
     "socket.io": "^2.3.0"
   },
   "devDependencies": {
@@ -35,7 +34,7 @@
     "chai": "^4.2.0",
     "mocha": "^6.2.2",
     "nyc": "^14.1.1",
-    "pm2": "^4.1.2",
+    "pm2": "^4.4.1",
     "socket.io-client": "^2.3.0",
     "ts-node": "^8.4.1",
     "tslint": "^5.20.0",

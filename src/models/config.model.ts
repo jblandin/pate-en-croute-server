@@ -2,6 +2,7 @@ export interface Config {
     'app': { 'port': number };
     'cycle': ConfigCycle;
     'journee': ConfigIntervalle[];
+    'allDaysValides'?: boolean;
 }
 
 export interface ConfigCycle {

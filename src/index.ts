@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 
 // Utile pour les logs de la config
@@ -14,6 +14,7 @@ import { AppTimer, Events } from './models';
 import { Timer } from './timer';
 
 import config from '../config/config.json';
+import { Sandglass } from './sandglass/sandglass.service';
 
 const app = express();
 const server = http.createServer(app);
@@ -28,7 +29,8 @@ appLog.enabled = true;
 const getDebug = (client: Socket) => appLog.extend(client.id);
 
 // Initialisation du timer
-const timer = new Timer(config);
+// const timer = new Timer(config);
+const timer = new Sandglass(config);
 
 // Callbacks envoyés au timer
 const emmitAppTimerEvt = (at: AppTimer) => {

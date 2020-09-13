@@ -7,7 +7,7 @@ const appError = console.error;
 // Fréquence de calibrage, en secondes
 const CALIBRAGE_FREQ = 60;
 
-export class Timer {
+export class Sandglass {
     private appTimer: AppTimer;
     private config: Config;
     private dureeCycle: number;
@@ -115,6 +115,7 @@ export class Timer {
         this.intervalle = setInterval(() => {
             this._updateTimeleft(this.appTimer, moment());
             cb(this.appTimer);
+            /*
             if (this.appTimer.timeleft <= 0) {
                 // Temps restant à 0 : c'est un mouvement
                 // On réinitialise le temps restant
@@ -123,6 +124,7 @@ export class Timer {
 
                 cbMouvement(this.appTimer);
             }
+            */
         }, 1000);
     }
 

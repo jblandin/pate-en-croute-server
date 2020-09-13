@@ -101,8 +101,8 @@ export function getDureeAvantReprise(m: Moment, periodesDeTravail: ConfigInterva
  * - Entre le début et la fin d'une période de travail
  * - Un jour ouvré
  */
-export function isMomentValide(aMoment: Moment, journee: ConfigIntervalle[]): boolean {
-    return isHeureDeTravail(aMoment, journee) && aMoment.isWorkingDay();
+export function isMomentValide(aMoment: Moment, journee: ConfigIntervalle[], allDaysValides = false): boolean {
+    return isHeureDeTravail(aMoment, journee) && (allDaysValides || aMoment.isWorkingDay());
 }
 
 /**
@@ -119,7 +119,7 @@ export function isHeureDeTravail(aMoment: Moment, journee: ConfigIntervalle[]): 
 /**
  * Calcule la date du prochain mouvement en fonction du moment et de la durée restante
  */
-export function calculerDateMouvement(aMoment: Moment, duree: number, journee: ConfigIntervalle[]): Moment {
+export function calculerDateMouvement(aMoment: Moment, duree: number, journee: ConfigIntervalle[], allDaysValides = false): Moment {
     if (!journee || !journee.length) {
         throw new Error('Erreur de configuration de "journee" : non défini ou vide');
     }
@@ -127,9 +127,9 @@ export function calculerDateMouvement(aMoment: Moment, duree: number, journee: C
     const m = aMoment.clone();
 
     // Si on n'est pas sur un jour de travail, on se positionne sur le jour suivant
-    if (!m.isWorkingDay()) {
+    if (!allDaysValides && !m.isWorkingDay()) {
         m.add(1, 'd').startOf('day');
-        return calculerDateMouvement(m, duree, journee);
+        return calculerDateMouvement(m, duree, journee, allDaysValides);
     }
 
     const periodesDeTravail = getPeriodesTriees(journee);
@@ -145,21 +145,24 @@ export function calculerDateMouvement(aMoment: Moment, duree: number, journee: C
             // et on diminue le temps restant d'autant
             m.add(dureeAvantPause);
             const dureeRestante = duree - dureeAvantPause.asSeconds();
-            return calculerDateMouvement(m, dureeRestante, journee);
+            return calculerDateMouvement(m, dureeRestante, journee, allDaysValides);
         }
     } else {
         // On calcule la durée restante de la pause
         const dureeAvantReprise = getDureeAvantReprise(m, periodesDeTravail);
         // Et on se positionne à la fin de la pause
         m.add(dureeAvantReprise);
-        return calculerDateMouvement(m, duree, journee);
+        return calculerDateMouvement(m, duree, journee, allDaysValides);
     }
 }
 
 /**
  * Calcule le temps restant entre un moment donné et un moment cible
  */
-export function calculerTempsRestantAvantDateDonnee(nowMoment: Moment, cibleMoment: Moment, journee: ConfigIntervalle[]): number {
+export function calculerTempsRestantAvantDateDonnee(
+    nowMoment: Moment, cibleMoment: Moment,
+    journee: ConfigIntervalle[], allDaysValides = false): number {
+
     if (!journee || !journee.length) {
         throw new Error('Erreur de configuration de "journee" : non défini ou vide');
     }
@@ -167,9 +170,9 @@ export function calculerTempsRestantAvantDateDonnee(nowMoment: Moment, cibleMome
     const m = nowMoment.clone();
 
     // Si on n'est pas sur un jour de travail, on se positionne sur le jour suivant
-    if (!m.isWorkingDay()) {
+    if (!allDaysValides && !m.isWorkingDay()) {
         m.add(1, 'd').startOf('day');
-        return calculerTempsRestantAvantDateDonnee(m, cibleMoment, journee);
+        return calculerTempsRestantAvantDateDonnee(m, cibleMoment, journee, allDaysValides);
     }
 
     const periodesDeTravail = getPeriodesTriees(journee);
@@ -183,14 +186,14 @@ export function calculerTempsRestantAvantDateDonnee(nowMoment: Moment, cibleMome
         } else {
             m.add(dureeAvantPause);
             // appLog('dureeAvantPause.asSeconds()', dureeAvantPause.asSeconds());
-            return dureeAvantPause.asSeconds() + calculerTempsRestantAvantDateDonnee(m, cibleMoment, journee);
+            return dureeAvantPause.asSeconds() + calculerTempsRestantAvantDateDonnee(m, cibleMoment, journee, allDaysValides);
         }
     } else {
         // On calcule la durée restante de la pause
         const dureeAvantReprise = getDureeAvantReprise(m, periodesDeTravail);
         // Et on se positionne à la fin de la pause
         m.add(dureeAvantReprise);
-        return calculerTempsRestantAvantDateDonnee(m, cibleMoment, journee);
+        return calculerTempsRestantAvantDateDonnee(m, cibleMoment, journee, allDaysValides);
     }
 }
 

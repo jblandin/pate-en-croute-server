@@ -185,11 +185,25 @@ describe('calculerDateMouvement', () => {
         expect(result.format('DD/MM/YYYY HH:mm:ss')).to.equal('28/10/2019 07:30:12');
     });
 
+    it('Ajout de six heures avec deux pauses, changement de jour, et weekend, avec tous les jours valides', () => {
+        const m = moment('25/10/2019 17:30:12', 'DD/MM/YYYY HH:mm:ss');
+        const s = 6 * 3600;
+        const result = calculDateService.calculerDateMouvement(m, s, journeeAvecDeuxPauseUneHeure, true);
+        expect(result.format('DD/MM/YYYY HH:mm:ss')).to.equal('26/10/2019 07:30:12');
+    });
+
     it('Ajout de six heures avec deux pauses, changement de jour, weekend et jour férié', () => {
         const m = moment('08/11/2019 17:30:12', 'DD/MM/YYYY HH:mm:ss');
         const s = 6 * 3600;
         const result = calculDateService.calculerDateMouvement(m, s, journeeAvecDeuxPauseUneHeure);
         expect(result.format('DD/MM/YYYY HH:mm:ss')).to.equal('12/11/2019 07:30:12');
+    });
+
+    it('Ajout de six heures avec deux pauses, changement de jour, weekend et jour férié, avec tous les jours valides', () => {
+        const m = moment('08/11/2019 17:30:12', 'DD/MM/YYYY HH:mm:ss');
+        const s = 6 * 3600;
+        const result = calculDateService.calculerDateMouvement(m, s, journeeAvecDeuxPauseUneHeure, true);
+        expect(result.format('DD/MM/YYYY HH:mm:ss')).to.equal('09/11/2019 07:30:12');
     });
 
     it('Conditions réelles', () => {
@@ -242,10 +256,24 @@ describe('calculerTempsRestantAvantDateDonnee', () => {
         expect(result).to.equal(6 * 3600);
     });
 
+    it(`Durée de 6h avec deux pauses (de 10h à 11h et de 16h à 17h), changement de jour, et week-end, avec tous les jours valides`, () => {
+        const now = moment('25/10/2019 17:31:12', 'DD/MM/YYYY HH:mm:ss');
+        const cible = moment('26/10/2019 07:31:12', 'DD/MM/YYYY HH:mm:ss');
+        const result = calculDateService.calculerTempsRestantAvantDateDonnee(now, cible, journeeAvecDeuxPauseUneHeure, true);
+        expect(result).to.equal(6 * 3600);
+    });
+
     it(`Durée de 6h avec deux pauses (de 10h à 11h et de 16h à 17h), changement de jour, week-end et jour férié`, () => {
         const now = moment('08/11/2019 17:31:12', 'DD/MM/YYYY HH:mm:ss');
         const cible = moment('12/11/2019 07:31:12', 'DD/MM/YYYY HH:mm:ss');
         const result = calculDateService.calculerTempsRestantAvantDateDonnee(now, cible, journeeAvecDeuxPauseUneHeure);
+        expect(result).to.equal(6 * 3600);
+    });
+
+    it(`Durée de 6h avec deux pauses (de 10h à 11h et de 16h à 17h), changement de jour, week-end et jour férié, avec tous les jours valides`, () => {
+        const now = moment('08/11/2019 17:31:12', 'DD/MM/YYYY HH:mm:ss');
+        const cible = moment('09/11/2019 07:31:12', 'DD/MM/YYYY HH:mm:ss');
+        const result = calculDateService.calculerTempsRestantAvantDateDonnee(now, cible, journeeAvecDeuxPauseUneHeure, true);
         expect(result).to.equal(6 * 3600);
     });
 
