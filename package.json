@@ -23,7 +23,7 @@
     "moment": "^2.24.0",
     "moment-ferie-fr": "^0.2.1",
     "pm2": "^4.1.2",
-    "socket.io": "^2.3.0"
+    "socket.io": "^2.5.0"
   },
   "devDependencies": {
     "@types/chai": "^4.2.4",
